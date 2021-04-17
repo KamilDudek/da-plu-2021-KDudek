@@ -21,27 +21,27 @@ async def root():
 
 
 @app.get("/method", status_code=200)
-async def check_method():
+async def check_method_get():
     return {"method": "GET"}
 
 
 @app.put("/method", status_code=200)
-async def check_method():
+async def check_method_put():
     return {"method": "PUT"}
 
 
 @app.delete("/method", status_code=200)
-async def check_method():
+async def check_method_delete():
     return {"method": "DELETE"}
 
 
 @app.options("/method", status_code=200)
-async def check_method():
+async def check_method_options():
     return {"method": "OPTIONS"}
 
 
 @app.post("/method", status_code=201)
-async def check_method():
+async def check_method_post():
     return {"method": "POST"}
 
 
