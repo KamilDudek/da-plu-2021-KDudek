@@ -47,8 +47,14 @@ def test_post_method():
                            ('013c6889f799cd986a735118e1888727d1435f7f623d05d58'
                             'c61bf2cd8b49ac90105e5786ceaabd62bbc27336153d0d316'
                             'b2d13b36804080c44aa6198c533215'),
-                           204), ('', '', 401),
-                          ('haslo', 'asdasda', 401)])
+                           204),
+                          ('', '', 401),
+                          ('haslo', 'asdasda', 401),
+                          (' ',
+                           'f90ddd77e400dfe6a3fcf479b00b1ee29e7015c5bb8cd70f5f1'
+                           '5b4886cc339275ff553fc8a053f8ddc7324f45168cffaf81f8c'
+                           '3ac93996f6536eef38e5e40768',
+                           401)])
 def test_auth_method(password, password_hash, status_code):
     response = client.get(
         f"/auth?password={password}&password_hash={password_hash}")

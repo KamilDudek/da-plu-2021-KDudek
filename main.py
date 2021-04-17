@@ -49,7 +49,7 @@ async def check_method_post():
 async def auth_method(password: str, password_hash: str):
     m = hashlib.sha512()
     m.update(str.encode(password))
-    if m.hexdigest() != password_hash:
+    if m.hexdigest() != password_hash or password == ' ':
         raise HTTPException(status_code=401)
 
 
