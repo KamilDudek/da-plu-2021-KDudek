@@ -54,6 +54,6 @@ def test_register():
 
 @pytest.mark.parametrize("id, status_code",
                          [('1', 200), ('-1', 400), ('921834981274', 404)])
-def test_get_patient_by_id(id, status_code):
-    response = client.get(f"/patient/{id}")
+def test_get_patient_by_id(patient_id, status_code):
+    response = client.get(f"/patient/{patient_id}")
     assert response.status_code == status_code

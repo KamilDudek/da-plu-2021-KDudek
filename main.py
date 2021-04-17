@@ -25,6 +25,26 @@ async def check_method():
     return {"method": "GET"}
 
 
+@app.put("/method", status_code=200)
+async def check_method():
+    return {"method": "PUT"}
+
+
+@app.delete("/method", status_code=200)
+async def check_method():
+    return {"method": "DELETE"}
+
+
+@app.options("/method", status_code=200)
+async def check_method():
+    return {"method": "OPTIONS"}
+
+
+@app.post("/method", status_code=201)
+async def check_method():
+    return {"method": "POST"}
+
+
 @app.get("/auth", response_class=Response, status_code=204)
 async def auth_method(password: str, password_hash: str):
     m = hashlib.sha512()
@@ -57,8 +77,8 @@ async def register_post(patient: Patient):
 
 
 @app.get('/patient/{id}', status_code=200)
-async def get_patient_by_id(id: int):
-    if id < 1:
+async def get_patient_by_id(patient_id: int):
+    if patient_id < 1:
         raise HTTPException(status_code=400)
 
     for patient_dict in app.patients_table:
