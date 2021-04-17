@@ -12,10 +12,34 @@ def test_read_main():
     assert response.json() == {"message": "Hello World"}
 
 
-def test_post_method():
+def test_get_method():
     response = client.get(f"/method")
     assert response.status_code == 200
     assert response.json() == {"method": "GET"}
+
+
+def test_put_method():
+    response = client.put(f"/method")
+    assert response.status_code == 200
+    assert response.json() == {"method": "PUT"}
+
+
+def test_delete_method():
+    response = client.delete(f"/method")
+    assert response.status_code == 200
+    assert response.json() == {"method": "DELETE"}
+
+
+def test_options_method():
+    response = client.options(f"/method")
+    assert response.status_code == 200
+    assert response.json() == {"method": "OPTIONS"}
+
+
+def test_post_method():
+    response = client.post(f"/method")
+    assert response.status_code == 201
+    assert response.json() == {"method": "POST"}
 
 
 @pytest.mark.parametrize("password, password_hash, status_code",
@@ -54,6 +78,6 @@ def test_register():
 
 @pytest.mark.parametrize("id, status_code",
                          [('1', 200), ('-1', 400), ('921834981274', 404)])
-def test_get_patient_by_id(patient_id, status_code):
-    response = client.get(f"/patient/{patient_id}")
+def test_get_patient_by_id(id, status_code):
+    response = client.get(f"/patient/{id}")
     assert response.status_code == status_code

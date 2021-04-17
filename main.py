@@ -77,8 +77,8 @@ async def register_post(patient: Patient):
 
 
 @app.get('/patient/{id}', status_code=200)
-async def get_patient_by_id(patient_id: int):
-    if patient_id < 1:
+async def get_patient_by_id(id: int):
+    if id < 1:
         raise HTTPException(status_code=400)
 
     for patient_dict in app.patients_table:
