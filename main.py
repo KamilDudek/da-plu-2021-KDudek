@@ -17,7 +17,7 @@ class Patient(BaseModel):
 
 @app.get("/", status_code=200)
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Hello World!"}
 
 
 @app.get("/method", status_code=200)
