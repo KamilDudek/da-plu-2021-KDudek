@@ -45,12 +45,14 @@ async def check_method_post():
     return {"method": "POST"}
 
 
-@app.get("/auth", status_code=204)
+@app.get("/auth", status_code=401)
 async def auth_method(password: str, password_hash: str):
     m = hashlib.sha512()
     m.update(str.encode(password))
-    if m.hexdigest() != password_hash or password == ' ':
-        raise HTTPException(status_code=401)
+    if m.hexdigest() == password_hash or password == ' ':
+        raise HTTPException(status_code=204)
+
+
 
 
 @app.post('/register', status_code=201)
