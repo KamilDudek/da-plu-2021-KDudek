@@ -17,7 +17,7 @@ class Patient(BaseModel):
 
 @app.get("/", status_code=200)
 async def root():
-    return {"message": "Hello World!"}
+    return {"message": "Hello world!"}
 
 
 @app.get("/method", status_code=200)
@@ -56,8 +56,8 @@ async def auth_method(password: str, password_hash: str):
 @app.post('/register', status_code=201)
 async def register_post(patient: Patient):
     register_data = jsonable_encoder(patient)
-    name_len = len(register_data['name'])
-    surname_len = len(register_data['surname'])
+    name_len = len(register_data['name'].strip())
+    surname_len = len(register_data['surname'].strip())
 
     if name_len == 0 or surname_len == 0:
         raise HTTPException(status_code=422)
