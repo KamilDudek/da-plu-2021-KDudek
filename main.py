@@ -67,8 +67,6 @@ async def register_post(patient: Patient):
     surname_len = len(
         "".join(re.findall("[a-zA-Z_ąćźóęśń+]", register_data['surname'])))
 
-    if name_len == 0 or surname_len == 0:
-        raise HTTPException(status_code=422)
     app.counter += 1
     register_data['id'] = app.counter
     today = datetime.now()
