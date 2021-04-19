@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from datetime import datetime, timedelta
 from fastapi.encoders import jsonable_encoder
-
+import re
+from typing import Optional
 from pydantic import BaseModel
 import hashlib
 
@@ -45,21 +46,20 @@ async def check_method_post():
     return {"method": "POST"}
 
 
-@app.get("/auth", status_code=401)
-async def auth_method(password: str, password_hash: str):
+@app.get("/auth", status_code=204)
+async def auth_method(password: Optional[str], password_hash: Optional[str]):
     m = hashlib.sha512()
     m.update(str.encode(password))
-    if m.hexdigest() == password_hash or password == ' ':
-        raise HTTPException(status_code=204)
-
-
+    if m.hexdigest() != password_hash or not password or not password_hash:
+        raise HTTPException(status_code=401)
 
 
 @app.post('/register', status_code=201)
 async def register_post(patient: Patient):
     register_data = jsonable_encoder(patient)
-    name_len = len(register_data['name'].strip())
-    surname_len = len(register_data['surname'].strip())
+    name_len = len("".join(re.findall("[a-zA-z+]", register_data['name'])))
+    surname_len = len(
+        "".join(re.findall("[a-zA-z+]", register_data['surname'])))
 
     if name_len == 0 or surname_len == 0:
         raise HTTPException(status_code=422)

@@ -1,3 +1,5 @@
+import re
+
 from fastapi.testclient import TestClient
 import pytest
 from datetime import datetime, timedelta
@@ -50,11 +52,7 @@ def test_post_method():
                            204),
                           ('', '', 401),
                           ('haslo', 'asdasda', 401),
-                          (' ',
-                           'f90ddd77e400dfe6a3fcf479b00b1ee29e7015c5bb8cd70f5f1'
-                           '5b4886cc339275ff553fc8a053f8ddc7324f45168cffaf81f8c'
-                           '3ac93996f6536eef38e5e40768',
-                           401)])
+                          ])
 def test_auth_method(password, password_hash, status_code):
     response = client.get(
         f"/auth?password={password}&password_hash={password_hash}")
@@ -68,10 +66,10 @@ def test_register():
     }
     response = client.post(f"/register", json=params)
     assert response.status_code == 201
-    print(response.json())
     today = datetime.now()
-    name_len = len(params['name'])
-    surname_len = len(params['surname'])
+    name_len = len("".join(re.findall("[a-zA-z+]", params['name'])))
+    surname_len = len(
+        "".join(re.findall("[a-zA-z+]", params['surname'])))
     vaccination_date = today + timedelta(days=surname_len + name_len)
     assert response.json() == {
         "id": 1,
