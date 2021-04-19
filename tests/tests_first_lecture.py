@@ -1,9 +1,7 @@
-import re
-
 from fastapi.testclient import TestClient
 import pytest
 from datetime import datetime, timedelta
-from main import app
+from main import app, find_letters
 
 client = TestClient(app)
 
@@ -67,9 +65,8 @@ def test_register():
     response = client.post(f"/register", json=params)
     assert response.status_code == 201
     today = datetime.now()
-    name_len = len("".join(re.findall("[a-zA-Z_ąćźóęśń+]", params['name'])))
-    surname_len = len(
-        "".join(re.findall("[a-zA-Z_ąćźóęśń+]", params['surname'])))
+    name_len = len(find_letters(params['name']))
+    surname_len = len(find_letters(params['name']))
     vaccination_date = today + timedelta(days=surname_len + name_len)
     assert response.json() == {
         "id": 1,

@@ -1,7 +1,6 @@
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException
 from datetime import datetime, timedelta
 from fastapi.encoders import jsonable_encoder
-import re
 from typing import Optional
 from pydantic import BaseModel
 import hashlib
@@ -9,6 +8,10 @@ import hashlib
 app = FastAPI()
 app.counter = 0
 app.patients_table = []
+
+
+def find_letters(word):
+    return ''.join([letter for letter in word if letter.isalpha()])
 
 
 class Patient(BaseModel):
@@ -46,26 +49,19 @@ async def check_method_post():
     return {"method": "POST"}
 
 
-@app.get("/auth", status_code=401)
-async def auth_method(response: Response, password: Optional[str] = None,
-                      password_hash: Optional[str] = None):
+@app.get("/auth", status_code=204)
+async def auth_method(password: Optional[str] = '', password_hash: Optional[str] = ''):
     m = hashlib.sha512()
     m.update(str.encode(password))
-    if not password or not password_hash:
-        return
-    if m.hexdigest() == password_hash:
-        response.status_code = 204
-        return
-    return
+    if not password or not password_hash or m.hexdigest() != password_hash:
+        raise HTTPException(status_code=401)
 
 
 @app.post('/register', status_code=201)
 async def register_post(patient: Patient):
     register_data = jsonable_encoder(patient)
-    name_len = len(
-        "".join(re.findall("[a-zA-Z_ąćźóęśń+]", register_data['name'])))
-    surname_len = len(
-        "".join(re.findall("[a-zA-Z_ąćźóęśń+]", register_data['surname'])))
+    name_len = len(find_letters(register_data['name']))
+    surname_len = len(find_letters(register_data['surname']))
 
     app.counter += 1
     register_data['id'] = app.counter
