@@ -69,7 +69,7 @@ def test_register():
     today = datetime.now()
     name_len = len("".join(re.findall("[a-zA-z+]", params['name'])))
     surname_len = len(
-        "".join(re.findall("[a-zA-z+]", params['surname'])))
+        "".join(re.findall("[-a-zA-z+]", params['surname'])))
     vaccination_date = today + timedelta(days=surname_len + name_len)
     assert response.json() == {
         "id": 1,

@@ -47,8 +47,8 @@ async def check_method_post():
 
 
 @app.get("/auth", status_code=401)
-async def auth_method(response: Response, password: Optional[str] = '',
-                      password_hash: Optional[str] = ''):
+async def auth_method(response: Response, password: Optional[str] = None,
+                      password_hash: Optional[str] = None):
     m = hashlib.sha512()
     m.update(str.encode(password))
     if not password or not password_hash:
@@ -64,7 +64,7 @@ async def register_post(patient: Patient):
     register_data = jsonable_encoder(patient)
     name_len = len("".join(re.findall("[a-zA-z+]", register_data['name'])))
     surname_len = len(
-        "".join(re.findall("[a-zA-z+]", register_data['surname'])))
+        "".join(re.findall("[-a-zA-z+]", register_data['surname'])))
 
     if name_len == 0 or surname_len == 0:
         raise HTTPException(status_code=422)
