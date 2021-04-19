@@ -1,4 +1,4 @@
-import regex
+import re
 
 from fastapi.testclient import TestClient
 import pytest
@@ -67,9 +67,9 @@ def test_register():
     response = client.post(f"/register", json=params)
     assert response.status_code == 201
     today = datetime.now()
-    name_len = len("".join(regex.findall("\p{alpha}+", params['name'])))
+    name_len = len("".join(re.findall("[a-zA-Z_ąćźóęśń+]", params['name'])))
     surname_len = len(
-        "".join(regex.findall("\p{alpha}+", params['surname'])))
+        "".join(re.findall("[a-zA-Z_ąćźóęśń+]", params['surname'])))
     vaccination_date = today + timedelta(days=surname_len + name_len)
     assert response.json() == {
         "id": 1,

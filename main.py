@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Response
 from datetime import datetime, timedelta
 from fastapi.encoders import jsonable_encoder
-import regex
+import re
 from typing import Optional
 from pydantic import BaseModel
 import hashlib
@@ -62,9 +62,10 @@ async def auth_method(response: Response, password: Optional[str] = None,
 @app.post('/register', status_code=201)
 async def register_post(patient: Patient):
     register_data = jsonable_encoder(patient)
-    name_len = len("".join(regex.findall("\p{alpha}+", register_data['name'])))
+    name_len = len(
+        "".join(re.findall("[a-zA-Z_ąćźóęśń+]", register_data['name'])))
     surname_len = len(
-        "".join(regex.findall("\p{alpha}+", register_data['surname'])))
+        "".join(re.findall("[a-zA-Z_ąćźóęśń+]", register_data['surname'])))
 
     if name_len == 0 or surname_len == 0:
         raise HTTPException(status_code=422)
