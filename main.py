@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, responses
 from datetime import datetime, timedelta
 from fastapi.encoders import jsonable_encoder
 import re
@@ -47,7 +47,8 @@ async def check_method_post():
 
 
 @app.get("/auth", status_code=204)
-async def auth_method(password: Optional[str], password_hash: Optional[str]):
+async def auth_method(password: Optional[str] = None,
+                      password_hash: Optional[str] = None):
     m = hashlib.sha512()
     m.update(str.encode(password))
     if m.hexdigest() != password_hash or not password or not password_hash:
