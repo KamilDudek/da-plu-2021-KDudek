@@ -50,7 +50,8 @@ async def check_method_post():
 
 
 @app.get("/auth", status_code=204)
-async def auth_method(password: Optional[str] = '', password_hash: Optional[str] = ''):
+async def auth_method(password: Optional[str] = '',
+                      password_hash: Optional[str] = ''):
     m = hashlib.sha512()
     m.update(str.encode(password))
     if not password or not password_hash or m.hexdigest() != password_hash:
