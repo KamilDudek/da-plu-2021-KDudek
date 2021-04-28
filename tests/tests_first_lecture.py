@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 import pytest
 from datetime import datetime, timedelta
-from main import app, find_letters
+from first_lecture.first_app import app, find_letters
 
 client = TestClient(app)
 
