@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Response, HTTPException, Cookie
-from hashlib import sha512
+import base64
 from typing import Optional
 from fastapi.responses import HTMLResponse
 from datetime import date
@@ -21,13 +21,16 @@ def index_static(request: Request):
 @app.post("/login_session")
 def login(response: Response, user: Optional[str] = None,
           password: Optional[str] = None):
-    if user == '4dm1n' and password == 'NotSoSecurePa$$':
+    if user == 'a' and password == 'a':
 
-        session_token = sha512(f'{user}{password}12312'.encode()).hexdigest()
+        session_token_uncode = f'{user}{password}dfsds'
+        session_token_bytes = session_token_uncode.encode('ascii')
+        base64_bytes = base64.b64encode(session_token_bytes)
+        session_token = base64_bytes.decode('ascii')
         app.access_tokens.append(session_token)
         response.set_cookie(key="session_token",
                             value=session_token)
-        return session_token
+        return {'token': session_token}
     else:
         raise HTTPException(status_code=401)
 
