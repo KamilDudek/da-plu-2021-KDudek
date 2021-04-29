@@ -2,7 +2,6 @@ from fastapi import FastAPI, Request, Response, HTTPException, Cookie, Depends, 
     status
 import base64
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from typing import Optional
 from fastapi.responses import HTMLResponse
 from datetime import date
 from fastapi.templating import Jinja2Templates
@@ -50,7 +49,7 @@ def login(response: Response,
 
 @app.post("/login_token")
 def create_cookie(*, response: Response, session_token: str = Cookie(None)):
-    if session_token not in app.access_tokens:
+    if session_token == app.access_tokens:
         raise HTTPException(status_code=401)
     else:
         return {'token': session_token}
