@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, Response, HTTPException, Cookie
 from hashlib import sha512
+from typing import Optional
 from fastapi.responses import HTMLResponse
 from datetime import date
 from fastapi.templating import Jinja2Templates
@@ -18,7 +19,8 @@ def index_static(request: Request):
 
 
 @app.post("/login_session")
-def login(user: str, password: str, response: Response):
+def login(response: Response, user: Optional[str] = None,
+          password: Optional[str] = None):
     if user == '4dm1n' and password == 'NotSoSecurePa$$':
 
         session_token = sha512(f'{user}{password}12312'.encode()).hexdigest()
