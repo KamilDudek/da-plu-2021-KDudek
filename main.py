@@ -23,9 +23,8 @@ def index_static(request: Request):
         "request": request, "today": today_good_form})
 
 
-@app.post("/login_session")
-def login(response: Response,
-          credentials: HTTPBasicCredentials = Depends(security)):
+def get_current_username(response: Response,
+                         credentials: HTTPBasicCredentials = Depends(security)):
     correct_username = secrets.compare_digest(credentials.username, "4dm1n")
     correct_password = secrets.compare_digest(credentials.password,
                                               "NotSoSecurePa$$")
@@ -44,12 +43,14 @@ def login(response: Response,
         app.access_tokens = session_token
         response.set_cookie(key="session_token",
                             value=session_token)
-        return {'token': session_token}
+    return credentials.username
+
+
+@app.post("/login_session")
+def login_session(username: str = Depends(get_current_username)):
+    return {'ok'}
 
 
 @app.post("/login_token")
-def create_cookie(*, response: Response, session_token: str = Cookie(None)):
-    if session_token == app.access_tokens:
-        raise HTTPException(status_code=401)
-    else:
-        return {'token': session_token}
+def login_token(username: str = Depends(get_current_username)):
+    return {'token': app.access_tokens}
