@@ -46,11 +46,11 @@ def get_current_username(response: Response,
     return credentials.username
 
 
-@app.post("/login_session")
+@app.post("/login_session", status_code=201)
 def login_session(username: str = Depends(get_current_username)):
     return {'ok'}
 
 
-@app.post("/login_token")
+@app.post("/login_token", status_code=201)
 def login_token(username: str = Depends(get_current_username)):
     return {'token': app.access_tokens}
