@@ -1,8 +1,8 @@
-from fastapi import FastAPI, Request, Response, HTTPException, Cookie, Depends, \
-    status
+from fastapi import FastAPI, Request, Response, HTTPException, Cookie, \
+    Depends, status
 import base64
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 from datetime import date
 from typing import Optional
 from fastapi.templating import Jinja2Templates
@@ -13,6 +13,7 @@ security = HTTPBasic()
 
 templates = Jinja2Templates(directory="templates")
 
+app.secret_key = 'Very hard to break and strong key to base64'
 app.access_tokens = ''
 
 
@@ -27,9 +28,9 @@ def index_static(request: Request):
 def get_current_username(response: Response,
                          credentials: HTTPBasicCredentials = Depends(
                              security)):
-    correct_username = secrets.compare_digest(credentials.username, "4dm1n")
+    correct_username = secrets.compare_digest(credentials.username, "a")
     correct_password = secrets.compare_digest(credentials.password,
-                                              "NotSoSecurePa$$")
+                                              "a")
 
     if not (correct_username or correct_password):
         raise HTTPException(
@@ -38,7 +39,8 @@ def get_current_username(response: Response,
             headers={"WWW-Authenticate": "Basic"},
         )
     else:
-        session_token_decode = f'{credentials.username}{credentials.password}dfsds'
+        session_token_decode = f'{credentials.username}' \
+                               f'{credentials.password}{app.secret_key}'
         session_token_bytes = session_token_decode.encode('ascii')
         base64_bytes = base64.b64encode(session_token_bytes)
         session_token = base64_bytes.decode('ascii')
@@ -58,18 +60,8 @@ def login_token(username: str = Depends(get_current_username)):
     return {'token': app.access_tokens}
 
 
-@app.get("/welcome_session")
-def login(*, response: Response, session_token: str = Cookie(None)):
-    if session_token != app.access_tokens:
-        raise HTTPException(status_code=401, detail="Unauthorised")
-    else:
-        return {"message": "Secure Content"}
-
-
-@app.get("/welcome_token")
-def login(*, response: Response, session_token: str,
-          format: Optional[str] = None):
-    if session_token != app.access_tokens:
+def check_format(session_token, format):
+    if session_token != app.access_tokens or session_token == '':
         raise HTTPException(status_code=401, detail="Unauthorised")
     else:
         if format == 'json':
@@ -78,3 +70,15 @@ def login(*, response: Response, session_token: str,
             return HTMLResponse(content="<h1>Welcome!</h1>", status_code=200)
         else:
             return f'Welcome!'
+
+
+@app.get("/welcome_session")
+def welcome_session(*, response: Response, session_token: str = Cookie(None),
+                    format: Optional[str] = ''):
+    return check_format(session_token, format)
+
+
+@app.get("/welcome_token")
+def welcome_token(*, response: Response, session_token: str = '',
+                  format: Optional[str] = ''):
+    return check_format(session_token, format)
