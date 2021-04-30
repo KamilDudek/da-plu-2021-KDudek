@@ -2,8 +2,9 @@ from fastapi import FastAPI, Request, Response, HTTPException, Cookie, Depends, 
     status
 import base64
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 from datetime import date
+from typing import Optional
 from fastapi.templating import Jinja2Templates
 import secrets
 
@@ -24,7 +25,8 @@ def index_static(request: Request):
 
 
 def get_current_username(response: Response,
-                         credentials: HTTPBasicCredentials = Depends(security)):
+                         credentials: HTTPBasicCredentials = Depends(
+                             security)):
     correct_username = secrets.compare_digest(credentials.username, "4dm1n")
     correct_password = secrets.compare_digest(credentials.password,
                                               "NotSoSecurePa$$")
@@ -48,9 +50,31 @@ def get_current_username(response: Response,
 
 @app.post("/login_session", status_code=201)
 def login_session(username: str = Depends(get_current_username)):
-    return {'ok'}
+    return {"token": app.access_tokens}
 
 
 @app.post("/login_token", status_code=201)
 def login_token(username: str = Depends(get_current_username)):
     return {'token': app.access_tokens}
+
+
+@app.get("/welcome_session")
+def login(*, response: Response, session_token: str = Cookie(None)):
+    if session_token != app.access_tokens:
+        raise HTTPException(status_code=401, detail="Unauthorised")
+    else:
+        return {"message": "Secure Content"}
+
+
+@app.get("/welcome_token")
+def login(*, response: Response, session_token: str,
+          format: Optional[str] = None):
+    if session_token != app.access_tokens:
+        raise HTTPException(status_code=401, detail="Unauthorised")
+    else:
+        if format == 'json':
+            return {"message": "Welcome!"}
+        elif format == 'html':
+            return HTMLResponse(content="<h1>Welcome!</h1>", status_code=200)
+        else:
+            return f'Welcome!'
