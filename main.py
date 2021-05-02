@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, Response, HTTPException, Cookie, \
     Depends, status
 import base64
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from datetime import date
 from typing import Optional
 from fastapi.templating import Jinja2Templates
@@ -69,7 +69,7 @@ def check_format(session_token, format):
         elif format == 'html':
             return HTMLResponse(content="<h1>Welcome!</h1>", status_code=200)
         else:
-            return 'Welcome!'
+            return PlainTextResponse(content="Welcome!", status_code=200)
 
 
 @app.get("/welcome_session")
