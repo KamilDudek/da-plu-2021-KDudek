@@ -15,6 +15,7 @@ templates = Jinja2Templates(directory="templates")
 
 app.secret_key = 'Very hard to break and strong key to base64'
 app.access_tokens = ''
+app.access_session = ''
 
 
 @app.get("/hello", response_class=HTMLResponse)
@@ -25,8 +26,8 @@ def index_static(request: Request):
         "request": request, "today": today_good_form})
 
 
-def get_current_username(response: Response,
-                         credentials: HTTPBasicCredentials = Depends(
+def get_current_token(response: Response,
+                      credentials: HTTPBasicCredentials = Depends(
                              security)):
     correct_username = secrets.compare_digest(credentials.username, "4dm1n")
     correct_password = secrets.compare_digest(credentials.password,
@@ -44,19 +45,22 @@ def get_current_username(response: Response,
         session_token_bytes = session_token_decode.encode('ascii')
         base64_bytes = base64.b64encode(session_token_bytes)
         session_token = base64_bytes.decode('ascii')
-        app.access_tokens = session_token
-        response.set_cookie(key="session_token",
-                            value=session_token)
-    return credentials.username
+
+    return session_token
 
 
 @app.post("/login_session", status_code=201)
-def login_session(username: str = Depends(get_current_username)):
-    return {"token": app.access_tokens}
+def login_session(response=Response,
+                  session_token: str = Depends(get_current_token)):
+    response.set_cookie(key="session_token",
+                        value=session_token)
+    app.access_session = session_token
+    return {"session": app.access_session}
 
 
 @app.post("/login_token", status_code=201)
-def login_token(username: str = Depends(get_current_username)):
+def login_token(access_token: str = Depends(get_current_token)):
+    app.access_tokens = access_token
     return {'token': app.access_tokens}
 
 
