@@ -65,9 +65,9 @@ def check_format(session_token, format):
         raise HTTPException(status_code=401, detail="Unauthorised")
     else:
         if format == 'json':
-            return {"message": "Welcome!"}
+            return {"message": 'Welcome!.json'}
         elif format == 'html':
-            return HTMLResponse(content="<h1>Welcome!</h1>", status_code=200)
+            return HTMLResponse(content="<h1>Welcome html</h1>", status_code=200)
         else:
             return f'Welcome!'
 
