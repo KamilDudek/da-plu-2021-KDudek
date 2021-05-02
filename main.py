@@ -28,9 +28,9 @@ def index_static(request: Request):
 def get_current_username(response: Response,
                          credentials: HTTPBasicCredentials = Depends(
                              security)):
-    correct_username = secrets.compare_digest(credentials.username, "a")
+    correct_username = secrets.compare_digest(credentials.username, "4dm1n")
     correct_password = secrets.compare_digest(credentials.password,
-                                              "a")
+                                              "NotSoSecurePa$$")
 
     if not (correct_username or correct_password):
         raise HTTPException(
