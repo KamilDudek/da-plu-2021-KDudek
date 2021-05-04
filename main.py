@@ -56,8 +56,10 @@ def login_session(response: Response,
     response.set_cookie(key="session_token",
                         value=session_token)
     if len(app.access_session) >= 3:
-        app.access_session.pop(0)
-    app.access_session.append(session_token)
+        app.access_session = app.access_session[1:]
+        app.access_session.append(session_token)
+    else:
+        app.access_session.append(session_token)
 
     return {"token": session_token}
 
@@ -65,8 +67,10 @@ def login_session(response: Response,
 @app.post("/login_token", status_code=201)
 def login_token(token: str = Depends(get_session_token)):
     if len(app.access_token) >= 3:
-        app.access_token.pop(0)
-    app.access_token.append(token)
+        app.access_token = app.access_token[1:]
+        app.access_token.append(token)
+    else:
+        app.access_token.append(token)
     return {'token': token}
 
 
