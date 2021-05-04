@@ -15,8 +15,7 @@ security = HTTPBasic()
 
 templates = Jinja2Templates(directory="templates")
 
-app.secret_key = f'Very hard to break and strong key to base64' \
-                 f'{datetime.now().time()}'
+app.secret_key = 'Very hard to break and strong key to base64'
 app.access_session = []
 app.access_token = []
 
@@ -34,6 +33,7 @@ def get_session_token(credentials: HTTPBasicCredentials = Depends(security)):
     correct_password = secrets.compare_digest(credentials.password,
                                               "NotSoSecurePa$$")
 
+    today = datetime.now().time()
     if not (correct_username or correct_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -41,7 +41,7 @@ def get_session_token(credentials: HTTPBasicCredentials = Depends(security)):
             headers={"WWW-Authenticate": "Basic"},
         )
     else:
-        session_token_decode = f'{credentials.username}' \
+        session_token_decode = f'{today}{credentials.username}' \
                                f'{credentials.password}{app.secret_key}'
         session_token_bytes = session_token_decode.encode('ascii')
         base64_bytes = base64.b64encode(session_token_bytes)
