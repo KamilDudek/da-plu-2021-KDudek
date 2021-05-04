@@ -29,8 +29,7 @@ def index_static(request: Request):
         "request": request, "today": today_good_form})
 
 
-def get_session_token(response: Response,
-                      credentials: HTTPBasicCredentials = Depends(security)):
+def get_session_token(credentials: HTTPBasicCredentials = Depends(security)):
     correct_username = secrets.compare_digest(credentials.username, "4dm1n")
     correct_password = secrets.compare_digest(credentials.password,
                                               "NotSoSecurePa$$")
@@ -56,6 +55,8 @@ def login_session(response: Response,
                   session_token: str = Depends(get_session_token)):
     response.set_cookie(key="session_token",
                         value=session_token)
+    if len(app.access_session) >= 3:
+        app.access_session.pop(0)
     app.access_session.append(session_token)
 
     return {"token": session_token}
@@ -63,6 +64,8 @@ def login_session(response: Response,
 
 @app.post("/login_token", status_code=201)
 def login_token(token: str = Depends(get_session_token)):
+    if len(app.access_token) >= 3:
+        app.access_token.pop(0)
     app.access_token.append(token)
     return {'token': token}
 
