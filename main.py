@@ -6,13 +6,17 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from datetime import date
 from fastapi.templating import Jinja2Templates
 import secrets
+from datetime import datetime
+
+from starlette.responses import RedirectResponse
 
 app = FastAPI()
 security = HTTPBasic()
 
 templates = Jinja2Templates(directory="templates")
 
-app.secret_key = 'Very hard to break and strong key to base64'
+app.secret_key = f'Very hard to break and strong key to base64' \
+                 f'{datetime.now().time()}'
 app.access_session = []
 app.access_token = []
 
@@ -83,3 +87,31 @@ def welcome_session(format: str = "", session_token: str = Cookie(None)):
 @app.get("/welcome_token")
 def welcome_token(token: str = "", format: str = ""):
     return check_format(token, app.access_token, format)
+
+
+@app.delete("/logout_session")
+def logout_session(format: str = "", session_token: str = Cookie(None)):
+    if session_token not in app.access_session or session_token == '':
+        raise HTTPException(status_code=401, detail="Unauthorised")
+    app.access_session.remove(session_token)
+    return RedirectResponse(url=f"/logged_out?format={format}",
+                            status_code=status.HTTP_302_FOUND)
+
+
+@app.delete("/logout_token")
+def logout_token(token: str = "", format: str = ""):
+    if token not in app.access_token or token == '':
+        raise HTTPException(status_code=401, detail="Unauthorised")
+    app.access_token.remove(token)
+    return RedirectResponse(url=f"/logged_out?format={format}",
+                            status_code=status.HTTP_302_FOUND)
+
+
+@app.get("/logged_out")
+def logged_out(format: str = ""):
+    if format == 'json':
+        return {"message": "Logged out!"}
+    elif format == 'html':
+        return HTMLResponse(content="<h1>Logged out!</h1>", status_code=200)
+    else:
+        return PlainTextResponse(content="Logged out!", status_code=200)
