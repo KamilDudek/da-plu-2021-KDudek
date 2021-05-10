@@ -134,39 +134,23 @@ async def root():
 # task1
 @app.get("/categories")
 async def categories():
-    cursor = app.db_connection.cursor()
-    cursor.row_factory = sqlite3.Row
-    data = cursor.execute("""
-                          SELECT CategoryID, CategoryName
-                          FROM Categories
-                          ORDER BY CategoryID;
-                          """).fetchall()
-    categories_id_order = {"categories": [{"id": x["CategoryID"],
-                           "name": x["CategoryName"]
-                           }
-                          for x in data]}
-    return categories_id_order
+    app.db_connection.row_factory = sqlite3.Row
+    categories = app.db_connection.execute(
+        'SELECT CategoryID id , CategoryName name FROM Categories ORDER BY CategoryID').fetchall()
+    return {
+        "categories": categories
+    }
 
 
 @app.get("/customers")
 async def customers():
-    cursor = app.db_connection.cursor()
-    cursor.row_factory = sqlite3.Row
-    data = cursor.execute("""
-                          SELECT CustomerID, CompanyName, COALESCE(Address, '')
-                          || ' ' || COALESCE(PostalCode, '') || ' ' || 
-                          COALESCE(City, '') || ' ' || COALESCE(Country, '') 
-                          As FullAddress
-                          FROM Customers
-                          ORDER BY CustomerID;
-                          """).fetchall()
-
-    customers_in_order = {"customers": [{"id": x["CustomerID"],
-                          "name": x["CompanyName"],
-                          "full_address": x["FullAddress"]
-                          }
-                         for x in data]}
-    return customers_in_order
+    app.db_connection.row_factory = sqlite3.Row
+    customers = app.db_connection.execute('''SELECT CustomerID id, CompanyName name , COALESCE(Address, '') || ' ' ||
+                                          COALESCE(PostalCode, '')|| ' ' || COALESCE(City,'') || ' ' || COALESCE(Country,'') 
+                                          AS full_address FROM Customers ORDER BY UPPER(CustomerID)''').fetchall()
+    return {
+        "customers": customers
+    }
 
 
 # taks2
@@ -227,3 +211,48 @@ async def products_id_orders(id: int):
          "total_price": round(((x['unitprice'] * x['quantity']) - (
                  x['discount'] * (x['unitprice'] * x['quantity']))), 2)}
         for x in data]}
+
+
+# task6
+class Category(BaseModel):
+    name: str
+
+
+@app.post('/categories', status_code=201)
+async def categories_post(category: Category):
+    cursor = app.db_connection.execute(
+        "INSERT INTO Categories (CategoryName) VALUES (?)", (category.name,))
+    app.db_connection.commit()
+    new_categories_id = cursor.lastrowid
+    app.db_connection.row_factory = sqlite3.Row
+    categories = app.db_connection.execute(
+        """SELECT CategoryID id, CategoryName name FROM Categories WHERE CategoryID = ?""",
+        (new_categories_id,)).fetchone()
+    return categories
+
+
+@app.put('/categories/{id}', status_code=200)
+async def categories_id(category: Category, id: int):
+    app.db_connection.execute(
+        "UPDATE Categories SET CategoryName = ? WHERE CategoryID = ?", (
+            category.name, id,)
+    )
+    app.db_connection.commit()
+    app.db_connection.row_factory = sqlite3.Row
+    data = app.db_connection.execute(
+        """SELECT CategoryID id, CategoryName name FROM Categories WHERE CategoryID = ?""",
+        (id,)).fetchone()
+    if data is None:
+        raise HTTPException(status_code=404)
+    return data
+
+
+@app.delete('/categories/{id}', status_code=200)
+async def categories_delete(id: int):
+    cursor = app.db_connection.execute(
+        "DELETE FROM Categories WHERE CategoryID = ?", (id,)
+    )
+    app.db_connection.commit()
+    if cursor.rowcount:
+        return {"deleted": 1}
+    raise HTTPException(status_code=404)
