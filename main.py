@@ -1,120 +1,145 @@
-from fastapi import FastAPI, Request, Response, HTTPException, Cookie, \
-    Depends, status
-import base64
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi.responses import HTMLResponse, PlainTextResponse
-from datetime import date
-from fastapi.templating import Jinja2Templates
-import secrets
-from datetime import datetime
+import sqlite3
 
-from starlette.responses import RedirectResponse
+from fastapi import Cookie, FastAPI, HTTPException, Query, Request, Response
+from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
+
+from typing import List
 
 app = FastAPI()
-security = HTTPBasic()
-
-templates = Jinja2Templates(directory="templates")
-
-app.secret_key = 'Very hard to break and strong key to base64'
-app.access_session = []
-app.access_token = []
 
 
-@app.get("/hello", response_class=HTMLResponse)
-def index_static(request: Request):
-    today = date.today()
-    today_good_form = today.strftime("%Y-%m-%d")
-    return templates.TemplateResponse("today.html", {
-        "request": request, "today": today_good_form})
+@app.on_event("startup")
+async def startup():
+    app.db_connection = sqlite3.connect("northwind.db")
+    app.db_connection.text_factory = lambda b: b.decode(
+        errors="ignore")  # northwind specific
 
 
-def get_session_token(credentials: HTTPBasicCredentials = Depends(security)):
-    correct_username = secrets.compare_digest(credentials.username, "4dm1n")
-    correct_password = secrets.compare_digest(credentials.password,
-                                              "NotSoSecurePa$$")
+@app.on_event("shutdown")
+async def shutdown():
+    app.db_connection.close()
 
-    today = datetime.now().time()
-    if not (correct_username or correct_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Basic"},
-        )
+
+@app.get("/products")
+async def products():
+    products = app.db_connection.execute(
+        "SELECT ProductName FROM Products").fetchall()
+    return {
+        "products": products,
+        "products_counter": len(products)
+    }
+
+
+@app.get("/suppliers/{supplier_id}")
+async def single_supplier(supplier_id: int):
+    app.db_connection.row_factory = sqlite3.Row
+    data = app.db_connection.execute(
+        "SELECT CompanyName, Address FROM Suppliers WHERE SupplierID = :supplier_id",
+        {'supplier_id': supplier_id}).fetchone()
+
+    return data
+
+
+@app.get("/employee_with_region")
+async def employee_with_region():
+    app.db_connection.row_factory = sqlite3.Row
+    data = app.db_connection.execute('''
+        SELECT Employees.LastName, Employees.FirstName, Territories.TerritoryDescription 
+        FROM Employees JOIN EmployeeTerritories ON Employees.EmployeeID = EmployeeTerritories.EmployeeID
+        JOIN Territories ON EmployeeTerritories.TerritoryID = Territories.TerritoryID;
+     ''').fetchall()
+    return [{"employee": f"{x['FirstName']} {x['LastName']}",
+             "region": x["TerritoryDescription"]} for x in data]
+
+
+@app.get("/customers")
+async def customers():
+    app.db_connection.row_factory = lambda cursor, x: x[0]
+    artists = app.db_connection.execute(
+        "SELECT CompanyName FROM Customers").fetchall()
+    return artists
+
+
+class Customer(BaseModel):
+    company_name: str
+
+
+@app.post("/customers/add")
+async def customers_add(customer: Customer):
+    cursor = app.db_connection.execute(
+        f"INSERT INTO Customers (CompanyName) VALUES ('{customer.company_name}')"
+    )
+    app.db_connection.commit()
+    return {
+        "CustomerID": cursor.lastrowid,
+        "CompanyName": customer.company_name
+    }
+
+
+class Shipper(BaseModel):
+    company_name: str
+
+
+@app.patch("/shippers/edit/{shipper_id}")
+async def artists_add(shipper_id: int, shipper: Shipper):
+    cursor = app.db_connection.execute(
+        "UPDATE Shippers SET CompanyName = ? WHERE ShipperID = ?", (
+            shipper.company_name, shipper_id)
+    )
+    app.db_connection.commit()
+
+    app.db_connection.row_factory = sqlite3.Row
+    data = app.db_connection.execute(
+        """SELECT ShipperID AS shipper_id, CompanyName AS company_name
+         FROM Shippers WHERE ShipperID = ?""",
+        (shipper_id,)).fetchone()
+
+    return data
+
+
+@app.get("/orders")
+async def orders():
+    app.db_connection.row_factory = sqlite3.Row
+    orders = app.db_connection.execute("SELECT * FROM Orders").fetchall()
+    return {
+        "orders_counter": len(orders),
+        "orders": orders,
+    }
+
+
+@app.delete("/orders/delete/{order_id}")
+async def order_delete(order_id: int):
+    cursor = app.db_connection.execute(
+        "DELETE FROM Orders WHERE OrderID = ?", (order_id,)
+    )
+    app.db_connection.commit()
+    return {"deleted": cursor.rowcount}
+
+
+@app.get("/region_count")
+async def root():
+    app.db_connection.row_factory = lambda cursor, x: x[0]
+    regions = app.db_connection.execute(
+        "SELECT RegionDescription FROM Regions ORDER BY RegionDescription DESC").fetchall()
+    count = app.db_connection.execute(
+        'SELECT COUNT(*) FROM Regions').fetchone()
+
+    return {
+        "regions": regions,
+        "regions_counter": count
+    }
+
+
+# task1
+# taks2
+@app.get("/products/{id}")
+async def products_by_id(id: int):
+    app.db_connection.row_factory = sqlite3.Row
+    products = app.db_connection.execute(
+        f"SELECT ProductName FROM Products WHERE ProductID={id} ").fetchone()
+    if products != None:
+        product = {"id": id, "name": products['ProductName']}
+        return product
     else:
-        session_token_decode = f'{today}{credentials.username}' \
-                               f'{credentials.password}{app.secret_key}'
-        session_token_bytes = session_token_decode.encode('ascii')
-        base64_bytes = base64.b64encode(session_token_bytes)
-        session_token = base64_bytes.decode('ascii')
-
-        return session_token
-
-
-@app.post("/login_session", status_code=201)
-def login_session(response: Response,
-                  session_token: str = Depends(get_session_token)):
-    response.set_cookie(key="session_token",
-                        value=session_token)
-    if len(app.access_session) >= 3:
-        app.access_session.pop(0)
-    app.access_session.append(session_token)
-
-    return {"token": session_token}
-
-
-@app.post("/login_token", status_code=201)
-def login_token(token: str = Depends(get_session_token)):
-    if len(app.access_token) >= 3:
-        app.access_token.pop(0)
-    app.access_token.append(token)
-    return {'token': token}
-
-
-def check_format(access, access_table, format):
-    if access not in access_table or access == '':
-        raise HTTPException(status_code=401, detail="Unauthorised")
-    else:
-        if format == 'json':
-            return {"message": 'Welcome!'}
-        elif format == 'html':
-            return HTMLResponse(content="<h1>Welcome!</h1>", status_code=200)
-        else:
-            return PlainTextResponse(content="Welcome!", status_code=200)
-
-
-@app.get("/welcome_session")
-def welcome_session(format: str = "", session_token: str = Cookie(None)):
-    return check_format(session_token, app.access_session, format)
-
-
-@app.get("/welcome_token")
-def welcome_token(token: str = "", format: str = ""):
-    return check_format(token, app.access_token, format)
-
-
-@app.delete("/logout_session")
-def logout_session(format: str = "", session_token: str = Cookie(None)):
-    if session_token not in app.access_session or session_token == '':
-        raise HTTPException(status_code=401, detail="Unauthorised")
-    app.access_session.remove(session_token)
-    return RedirectResponse(url=f"/logged_out?format={format}",
-                            status_code=status.HTTP_302_FOUND)
-
-
-@app.delete("/logout_token")
-def logout_token(token: str = "", format: str = ""):
-    if token not in app.access_token or token == '':
-        raise HTTPException(status_code=401, detail="Unauthorised")
-    app.access_token.remove(token)
-    return RedirectResponse(url=f"/logged_out?format={format}",
-                            status_code=status.HTTP_302_FOUND)
-
-
-@app.get("/logged_out")
-def logged_out(format: str = ""):
-    if format == 'json':
-        return {"message": "Logged out!"}
-    elif format == 'html':
-        return HTMLResponse(content="<h1>Logged out!</h1>", status_code=200)
-    else:
-        return PlainTextResponse(content="Logged out!", status_code=200)
+        raise HTTPException(status_code=404, detail="ID doesn't exist")
