@@ -53,13 +53,13 @@ async def employee_with_region():
              "region": x["TerritoryDescription"]} for x in data]
 
 
-@app.get("/customers")
-async def customers():
-    app.db_connection.row_factory = lambda cursor, x: x[0]
-    artists = app.db_connection.execute(
-        "SELECT CompanyName FROM Customers").fetchall()
-    return artists
-
+# @app.get("/customers")
+# async def customers():
+#     app.db_connection.row_factory = lambda cursor, x: x[0]
+#     artists = app.db_connection.execute(
+#         "SELECT CompanyName FROM Customers").fetchall()
+#     return artists
+#
 
 class Customer(BaseModel):
     company_name: str
