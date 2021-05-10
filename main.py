@@ -135,24 +135,34 @@ async def root():
 @app.get("/categories")
 async def categories():
     app.db_connection.row_factory = sqlite3.Row
-    categories = app.db_connection.execute(
-        'SELECT CategoryID id , CategoryName name FROM Categories ORDER BY CategoryID').fetchall()
+    data = app.db_connection.execute(
+        "SELECT CategoryId AS id, CategoryName AS name FROM Categories").fetchall()
     return {
-        "categories": categories
+        'categories': data
     }
 
 
 @app.get("/customers")
 async def customers():
     app.db_connection.row_factory = sqlite3.Row
-    customers = app.db_connection.execute('''SELECT CustomerID id, CompanyName name , COALESCE(Address, '') || ' ' ||
-                                          COALESCE(PostalCode, '')|| ' ' || COALESCE(City,'') || ' ' || COALESCE(Country,'') 
-                                          AS full_address FROM Customers ORDER BY UPPER(CustomerID)''').fetchall()
+    data = app.db_connection.execute(
+        "SELECT CustomerId, CompanyName, Address, PostalCode, City, Country FROM customers").fetchall()
+    refactored = []
+    for row in data:
+        keys = ['Address', 'PostalCode', 'City', 'Country']
+        full_address = []
+        for key in keys:
+            if row[key]:
+                full_address.append(row[key])
+
+        refactored.append(
+            {'id': row['CustomerId'],
+             'name': row['CompanyName'],
+             'full_address': ' '.join(full_address)}
+        )
     return {
-        "customers": customers
+        'customers': refactored
     }
-
-
 # taks2
 @app.get("/products/{id}")
 async def products_by_id(id: int):
